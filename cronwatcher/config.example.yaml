@@ -1,0 +1,35 @@
+# cronwatcher configuration file
+
+log_file: /var/log/cronwatcher.log
+log_level: INFO
+state_dir: /var/lib/cronwatcher
+
+alerts:
+  email: ops@example.com
+  webhook_url: https://hooks.example.com/notify
+  slack_channel: "#alerts"
+
+jobs:
+  - name: daily_backup
+    schedule: "0 2 * * *"
+    command: /usr/local/bin/backup.sh
+    timeout: 600
+    alert_on_failure: true
+    alert_on_timeout: true
+    retries: 1
+
+  - name: cleanup_tmp
+    schedule: "*/30 * * * *"
+    command: /usr/local/bin/cleanup.sh /tmp
+    timeout: 60
+    alert_on_failure: true
+    alert_on_timeout: false
+    retries: 0
+
+  - name: health_check
+    schedule: "* * * * *"
+    command: /usr/local/bin/healthcheck.sh
+    timeout: 30
+    alert_on_failure: true
+    alert_on_timeout: true
+    retries: 2
