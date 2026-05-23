@@ -61,6 +61,18 @@ View recent job history:
 cronwatcher status
 ```
 
+Check the status of a specific job:
+
+```bash
+cronwatcher status --job daily-backup
+```
+
+Validate your configuration file without starting the daemon:
+
+```bash
+cronwatcher validate --config /etc/cronwatcher/config.yaml
+```
+
 ---
 
 ## License
