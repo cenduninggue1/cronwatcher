@@ -60,3 +60,23 @@ def should_alert(db_path: str, job_name: str, cooldown_minutes: int) -> bool:
         return True
     elapsed = (_utcnow() - last).total_seconds() / 60
     return elapsed >= cooldown_minutes
+
+
+def clear_alert_history(db_path: str, job_name: Optional[str] = None) -> int:
+    """Delete alert history from the log.
+
+    If *job_name* is provided, only records for that job are removed.
+    Otherwise, all records are deleted.
+
+    Returns the number of rows deleted.
+    """
+    with get_connection(db_path) as conn:
+        _ensure_table(conn)
+        if job_name is not None:
+            cursor = conn.execute(
+                "DELETE FROM alert_log WHERE job_name = ?", (job_name,)
+            )
+        else:
+            cursor = conn.execute("DELETE FROM alert_log")
+        conn.commit()
+    return cursor.rowcount
