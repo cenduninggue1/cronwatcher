@@ -14,11 +14,22 @@ def add_stale_subparser(subparsers: argparse._SubParsersAction) -> None:  # type
         "stale",
         help="List jobs that have not run within their expected interval.",
     )
+    p.add_argument(
+        "--exit-zero",
+        action="store_true",
+        default=False,
+        help="Always exit with code 0, even when stale jobs are found.",
+    )
     p.set_defaults(func=cmd_stale)
 
 
 def cmd_stale(args: argparse.Namespace, cfg: Config) -> int:
-    """Print stale jobs to stdout.  Returns exit-code 1 if any are found."""
+    """Print stale jobs to stdout.  Returns exit-code 1 if any are found.
+
+    If ``--exit-zero`` is passed the exit code is always 0, which is useful
+    when running cronwatcher inside a CI pipeline where a non-zero exit would
+    fail the build even for informational stale checks.
+    """
     stale = find_stale_jobs(cfg.db_path, cfg.jobs)
 
     if not stale:
@@ -33,4 +44,4 @@ def cmd_stale(args: argparse.Namespace, cfg: Config) -> int:
             f"{s.job_name:<30} {last:<24} {s.expected_interval_minutes:<16} {s.minutes_overdue}"
         )
 
-    return 1
+    return 0 if args.exit_zero else 1
