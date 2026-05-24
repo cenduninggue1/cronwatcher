@@ -55,6 +55,20 @@ def get_recent_events(
     ]
 
 
+def get_events_by_type(db_path: str, event: str, limit: int = 50) -> List[dict]:
+    """Return the *limit* most recent audit events matching *event*, newest first."""
+    conn = get_connection(db_path)
+    _ensure_table(conn)
+    rows = conn.execute(
+        "SELECT id, ts, event, detail FROM audit_log WHERE event = ? ORDER BY id DESC LIMIT ?",
+        (event, limit),
+    ).fetchall()
+    return [
+        {"id": r[0], "ts": r[1], "event": r[2], "detail": r[3]}
+        for r in rows
+    ]
+
+
 def format_events(events: List[dict]) -> str:
     """Return a human-readable string of audit events."""
     if not events:
