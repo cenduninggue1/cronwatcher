@@ -31,6 +31,20 @@ def _seconds_until_next_minute() -> float:
     return 60.0 - now.second - now.microsecond / 1_000_000
 
 
+def _interruptible_sleep(duration: float) -> None:
+    """Sleep for *duration* seconds, waking early if a stop signal arrives.
+
+    Checks the ``_STOP`` flag every second so that SIGTERM/SIGINT is
+    honoured promptly rather than waiting out the full tick interval.
+    """
+    deadline = time.monotonic() + duration
+    while not _STOP:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        time.sleep(min(1.0, remaining))
+
+
 def run_daemon(
     config_path: Path,
     *,
@@ -60,7 +74,7 @@ def run_daemon(
     # Align to the next whole minute before entering the loop.
     sleep_for = _seconds_until_next_minute()
     logger.debug("Sleeping %.1fs to align to minute boundary.", sleep_for)
-    time.sleep(sleep_for)
+    _interruptible_sleep(sleep_for)
 
     while not _STOP:
         tick_start = time.monotonic()
@@ -81,6 +95,6 @@ def run_daemon(
         elapsed = time.monotonic() - tick_start
         sleep_for = max(0.0, tick_interval - elapsed)
         if not _STOP:
-            time.sleep(sleep_for)
+            _interruptible_sleep(sleep_for)
 
     logger.info("cronwatcher daemon stopped after %d tick(s).", tick_count)
